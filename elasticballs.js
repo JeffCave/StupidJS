@@ -20,21 +20,15 @@ function ElasticBalls(){
 	let STOPACC = 0.1;
 	let BOUNCE = 0.75;
 
-	let dots = [];
-	let timer = null;
-	
+	let pin = null;
+	let pinBuster = null;
+	let mousePos = {x:0,y:0};
+
 	
 	this.start = function(){
-		if(timer !== null) return;
+		if(pin !== null) return;
 		
-		init();
-		
-		let animate = function() {
-			dots.forEach(function(d){
-				d.animate();
-			});
-		};
-		timer = setInterval(animate, DELAY);
+		document.addEventListener('mousemove',updatePinPosition);
 	};
 	
 	
@@ -46,19 +40,18 @@ function ElasticBalls(){
 	 * idea where it is going to stop. Removes it from the screen.
 	 */
 	this.stop = function(){
-		if(timer === null) return;
-		clearInterval(timer);
-		timer = null;
-		// I don't like the fade out effect. I would prefer that 
-		// the elements loose their attachment to the mouse and naturally
-		// fall off the page. It plays with the physics more.
-		dots.forEach(function(d,i){
-			setTimeout(function(){
-				d.elem.style.opacity = 0;
-				setTimeout(d.elem.remove,1000);
-			},i*50);
-		});
-		
+		document.removeEventListener('mousemove',updatePinPosition);
+		document.removeEventListener('mouseout', destroyPin);
+		destroyPin();
+	};
+	
+	this.toggle = function(){
+		if(pin === null){
+			this.start();
+		}
+		else{
+			this.stop();
+		}
 	};
 	
 	
@@ -67,34 +60,46 @@ function ElasticBalls(){
 	 * 
 	 */
 	this.isActive = function(){
-		return timer !== null;
+		return pin !== null;
 	};
 	
 	
+	function updatePinPosition(e){
+		if(pinBuster){
+			clearTimeout(pinBuster);
+			pinBuster = null;
+		}
+		if(pin === null){
+			init();
+		}
+		pin.x = e.pageX;
+		pin.y = e.pageY;
+		pin.velocity.x = 0;
+		pin.velocity.y = 0;
+		
+		mousePos.x = e.pageX;
+		mousePos.y = e.pageY;
+	}
+	
+	function destroyPin(){
+		if(pin && !pinBuster){
+			pinBuster = setTimeout(function(){pin.destroy()}, 5);
+		}
+	}
+	
 	function init()
 	{
-		let prevDot = null;
-		dots = new Array(nDots)
-			.fill(null)
-			.map(function(d,i){
-				d = new Dot(i);
-				d.prev = prevDot;
-				if(prevDot) prevDot.next = d;
-				prevDot = d;
-				return d;
-			})
-			;
+		let chain = new Dot();
+		for(let d=1; d<nDots; d++){
+			chain.prev = new Dot();
+			chain.prev.next = chain;
+			chain = chain.prev;
+		}
+		pin = chain;
 		
-		let firstDot = dots[0];
-		firstDot.elem.style.display = 'none';
-		document.addEventListener('mousemove', function(e){
-			firstDot.pin.x = e.pageX;
-			firstDot.pin.y = e.pageY;
-		});
-		document.addEventListener('mouseout', function(e){
-			firstDot.pin.x = null;
-			firstDot.pin.y = null;
-		});
+		pin.elem.style.display = 'none';
+		document.removeEventListener('mouseout', destroyPin);
+		document.addEventListener('mouseout', destroyPin);
 	}
 	
 	
@@ -119,20 +124,37 @@ function ElasticBalls(){
 		this.x = 0;
 		this.y = 0;
 		this.velocity = {
-			x:0,
-			y:0
-		};
-		this.pin = {
-			x:null,
-			y:null,
+			x:STOPVEL,
+			y:STOPVEL
 		};
 		
 		this.prev = null;
 		this.next = null;
 		
 		document.body.append(this.elem);
-	
-	
+		
+		let animate = function(d){d.animate();};
+		let interval = setInterval(animate,DELAY,this);
+		
+		
+		this.destroy = function(){
+			this.elem.remove();
+			if(this.next){
+				this.next.prev = null;
+			}
+			if(this.prev){
+				this.prev.next = null;
+			}
+			if(pin === this){
+				pin = null;
+			}
+			if(interval){
+				clearInterval(interval);
+				interval = null;
+			}
+		};
+		
+		
 		/**
 		 * 
 		 */
@@ -157,13 +179,8 @@ function ElasticBalls(){
 			
 			// Check to see if the ball is "nailed" to something
 			// if so, it does not ahve any motion dictated by springs and gravity
-			if(dot.pin.x){
-				dot.x = dot.pin.x;
-				dot.velocity.x = 0;
-			}
-			if(dot.pin.y){
-				dot.y = dot.pin.y;
-				dot.velocity.y = 0;
+			if(this === pin){
+				return;
 			}
 			
 			
@@ -212,10 +229,16 @@ function ElasticBalls(){
 			let height = window.innerHeight; // - win.scrollTop;
 			let width = window.innerWidth; // - document.scrollLeft;
 			if (dot.y >=  height - dot.elem.offsetHeight - 1) {
-				if (dot.velocity.y > 0) {
-					dot.velocity.y = BOUNCE * -dot.velocity.y;
+				if(dot.prev){
+					if (dot.velocity.y > 0) {
+						dot.velocity.y = BOUNCE * -dot.velocity.y;
+					}
+					dot.y = height - dot.elem.offsetHeight - 1;
 				}
-				dot.y = height - dot.elem.offsetHeight - 1;
+				else if(dot.y >=  height){
+					dot.destroy();
+					return;
+				}
 			}
 			if (dot.y < 0) {
 				if (dot.velocity.y < 0) {
