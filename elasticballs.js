@@ -8,9 +8,6 @@
 function ElasticBalls(){
 	
 	let nDots = 7;
-	let Xpos = 0;
-	let Ypos = 0;
-	
 	
 	let DELTAT = 0.01;
 	let SEGLEN = 10;
@@ -22,7 +19,7 @@ function ElasticBalls(){
 	let STOPACC = 0.1;
 	let BOUNCE = 0.75;
 
-	let dots = new Array();
+	let dots = [];
 	
 	let timer = null;
 	
@@ -67,28 +64,27 @@ function ElasticBalls(){
 	
 	function init()
 	{
-		for (let i = 0; i < nDots; i++) {
-			dots[i] = new dot(i);
-		}
-		
-		for (let i = 0; i < nDots; i++) {
-			dots[i].obj.left = dots[i].X + "px";
-			dots[i].obj.top = dots[i].Y + "px";
-		}
+		let prevDot = null;
+		dots = new Array(nDots)
+			.fill(null)
+			.map(function(d,i){
+				d = new Dot(i);
+				d.prev = prevDot;
+				if(prevDot) prevDot.next = d;
+				prevDot = d;
+				return d;
+			})
+			;
 		
 		let firstDot = dots[0];
-		firstDot.obj.display = 'none';
+		firstDot.elem.style.display = 'none';
 		document.addEventListener('mousemove', function(e){
-			firstDot.nailedX = e.pageX;
-			firstDot.nailedY = e.pageY;
-		});
-		document.addEventListener('mouseover', function(e){
-			firstDot.nailedX = e.pageX;
-			firstDot.nailedY = e.pageY;
+			firstDot.pin.x = e.pageX;
+			firstDot.pin.y = e.pageY;
 		});
 		document.addEventListener('mouseout', function(e){
-			firstDot.nailedX = null;
-			firstDot.nailedY = null;
+			firstDot.pin.x = null;
+			firstDot.pin.y = null;
 		});
 	}
 	
@@ -96,139 +92,162 @@ function ElasticBalls(){
 	/**
 	 * 
 	 */
-	function dot() {
+	function Dot() {
 		this.elem = document.createElement('div');
-		this.obj = this.elem.style;
-		
 		this.elem.style = [
 				'background-color:blue',
 				'width:0.5em',
+				'left:0px',
+				'top:0px',
 				'height:0.5em',
 				'border-radius:0.25em',
 				'position:absolute',
 				'opacity:1',
 				'transition:opacity 1s'
 			].join(';');
+		this.elem.classList.add('elasticball');
 		
-		this.X = Xpos;
-		this.Y = Ypos;
-		this.dx = 0;
-		this.dy = 0;
+		this.x = 0;
+		this.y = 0;
+		this.velocity = {
+			x:0,
+			y:0
+		};
+		this.pin = {
+			x:null,
+			y:null,
+		};
+		
+		this.prev = null;
+		this.next = null;
 		
 		document.body.append(this.elem);
-	}
 	
 	
-	/**
-	 * 
-	 */
-	function vec(X, Y) {
-		this.X = X;
-		this.Y = Y;
-	}
-	
-	
-	/**
-	 * 
-	 */
-	function springForce(i, j, spring)
-	{
-		var dx = (dots[i].X - dots[j].X);
-		var dy = (dots[i].Y - dots[j].Y);
-		var len = Math.sqrt(dx*dx + dy*dy);
-		if (len > SEGLEN) {
-			var springF = SPRINGK * (len - SEGLEN);
-			spring.X += (dx / len) * springF;
-			spring.Y += (dy / len) * springF;
+		/**
+		 * 
+		 */
+		function springForce(dotA, dotB, spring)
+		{
+			let dx = (dotA.x - dotB.x);
+			let dy = (dotA.y - dotB.y);
+			let len = Math.sqrt(dx*dx + dy*dy);
+			if (len > SEGLEN) {
+				let springF = SPRINGK * (len - SEGLEN);
+				spring.x += (dx / len) * springF;
+				spring.y += (dy / len) * springF;
+			}
 		}
+		
+		
+		/**
+		 * Animates the specified dot
+		 */
+		this.animate = function() {
+			let dot = this;
+			
+			// Check to see if the ball is "nailed" to something
+			// if so, it does not ahve any motion dictated by springs and gravity
+			if(dot.pin.x){
+				dot.x = dot.pin.x;
+				dot.velocity.x = 0;
+			}
+			if(dot.pin.y){
+				dot.y = dot.pin.y;
+				dot.velocity.y = 0;
+			}
+			
+			
+			// Now we can start applying physics
+			let resist = {x:RESISTANCE,y:RESISTANCE};
+			resist.x *= -dot.velocity.x;
+			resist.y *= -dot.velocity.y;
+			
+			let spring = {x:0,y:0};
+			if (dot.prev) {
+				springForce(dot.prev, dot, spring);
+			}
+			if (dot.next) {
+				springForce(dot.next, dot, spring);
+			}
+			
+			let accel = {
+				x : (spring.x+resist.x) / MASS,
+				y : (spring.y+resist.y) / MASS
+			};
+			accel.y += GRAVITY;
+			
+			dot.velocity.x += (DELTAT * accel.x);
+			dot.velocity.y += (DELTAT * accel.y);
+			
+			// check the item has settled down
+			// at some point there is so little movement we may as well call it
+			// check our stop constants to see if the movement is too small to
+			// really consider
+			let isStopped =
+				Math.abs(dot.velocity.x) < STOPVEL && 
+				Math.abs(dot.velocity.y) < STOPVEL && 
+				Math.abs(accel.x) < STOPACC && 
+				Math.abs(accel.y) < STOPACC
+				; 
+			if (isStopped) {
+				dot.velocity.x = 0;
+				dot.velocity.y = 0;
+			}
+			
+			dot.x += dot.velocity.x;
+			dot.y += dot.velocity.y;
+			
+			
+			// Apply boundary checks
+			let height = window.innerHeight; // - win.scrollTop;
+			let width = window.innerWidth; // - document.scrollLeft;
+			if (dot.y >=  height - dot.elem.offsetHeight - 1) {
+				if (dot.velocity.y > 0) {
+					dot.velocity.y = BOUNCE * -dot.velocity.y;
+				}
+				dot.y = height - dot.elem.offsetHeight - 1;
+			}
+			if (dot.y < 0) {
+				if (dot.velocity.y < 0) {
+					dot.velocity.y = BOUNCE * -dot.velocity.y;
+				}
+				dot.y = 0;
+			}
+			if (dot.x >= width - dot.elem.offsetWidth) {
+				if (dot.velocity.x > 0) {
+					dot.velocity.x = BOUNCE * -dot.velocity.x;
+				}
+				dot.x = width - dot.elem.offsetWidth - 1;
+			}
+			if (dot.x < 0) {
+				if (dot.velocity.x < 0) {
+					dot.velocity.x = BOUNCE * -dot.velocity.x;
+				}
+				dot.x = 0;
+			}
+			
+			
+			// move the object to its new position
+			dot.elem.style.left = dot.x + "px";
+			dot.elem.style.top =  dot.y + "px";
+		};
 	}
-	
 	
 	/**
 	 * Animates the specified dot
 	 */
-	function animate(dot,i) {
+	function animate(dot) {
 		// originally animate did not take a parameter
 		// if no parameter was passed, assume the global array of dots
 		if(!dot){
 			animate(dots);
 			return;
 		}
-		// originally animate worked on an array of dots. If they passed an 
-		// array, animate each individual dot.
-		if(Array.isArray(dot)){
-			dot.forEach(animate);
-			return;
-		}
-		
-		
-		// Check to see if the ball is "nailed" to something
-		// if so, it does not ahve any motion dictated by springs and gravity
-		if(dot.nailedX){
-			dot.X = dot.nailedX;
-			dot.dx = 0;
-		}
-		if(dot.nailedY){
-			dot.Y = dot.nailedY;
-			dot.dy = 0;
-		}
-		
-		
-		// Now we can start applying things like spring tensions
-		var spring = new vec(0, 0);
-		if (i > 0) {
-			springForce(i-1, i, spring);
-		}
-		if (i < (nDots - 1)) {
-			springForce(i+1, i, spring);
-		}
-		
-		var resist = new vec(-dot.dx * RESISTANCE, -dot.dy * RESISTANCE);
-		
-		var accel = new vec((spring.X + resist.X)/ MASS, (spring.Y + resist.Y)/ MASS + GRAVITY);
-		
-		dot.dx += (DELTAT * accel.X);
-		dot.dy += (DELTAT * accel.Y);
-		
-		if (Math.abs(dot.dx) < STOPVEL && Math.abs(dot.dy) < STOPVEL && Math.abs(accel.X) < STOPACC && Math.abs(accel.Y) < STOPACC) {
-			dot.dx = 0;
-			dot.dy = 0;
-		}
-		
-		dot.X += dot.dx;
-		dot.Y += dot.dy;
-		
-		let height = window.innerHeight; // - win.scrollTop;
-		let width = window.innerWidth; // - document.scrollLeft;
-		
-		if (dot.Y >=  height - dot.elem.offsetHeight - 1) {
-			if (dot.dy > 0) {
-				dot.dy = BOUNCE * -dot.dy;
-			}
-			dot.Y = height - dot.elem.offsetHeight - 1;
-		}
-		if (dot.Y < 0) {
-			if (dot.dy < 0) {
-				dot.dy = BOUNCE * -dot.dy;
-			}
-			dot.Y = 0;
-		}
-		
-		if (dot.X >= width - dot.elem.offsetWidth) {
-			if (dot.dx > 0) {
-				dot.dx = BOUNCE * -dot.dx;
-			}
-			dot.X = width - dot.elem.offsetWidth - 1;
-		}
-		if (dot.X < 0) {
-			if (dot.dx < 0) {
-				dot.dx = BOUNCE * -dot.dx;
-			}
-			dot.X = 0;
-		}
-		
-		dot.obj.left = dot.X + "px";
-		dot.obj.top =  dot.Y + "px";
+		dot.forEach(function(d){
+			d.animate();
+		});
+		return;
 	}
-	
+
 }
