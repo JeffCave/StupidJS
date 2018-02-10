@@ -1,76 +1,65 @@
+'use strict';
 
-<!--Simply copy and paste into the <body></body> of your page.-->
-
-<div id="dot0" style="position: absolute; visibility: hidden; height: 11; width: 11;"></div>
-<div id="dot1" style="position: absolute; height: 35; width: 35;"><img src="ball1.gif" width="11" height="11" alt=""></div>
-<div id="dot2" style="position: absolute; height: 35; width: 35;"><img src="ball1.gif" width="11" height="11" alt="."></div>
-<div id="dot3" style="position: absolute; height: 35; width: 35;"><img src="ball1.gif" width="11" height="11" alt="."></div>
-<div id="dot4" style="position: absolute; height: 35; width: 35;"><img src="ball1.gif" width="11" height="11" alt="."></div>
-<div id="dot5" style="position: absolute; height: 35; width: 35;"><img src="ball1.gif" width="11" height="11" alt="."></div>
-<div id="dot6" style="position: absolute; height: 35; width: 35;"><img src="ball1.gif" width="11" height="11" alt="."></div>
-
-<script type='text/javascript'>
-
+/*
 <!-- This script and many more from -->
 <!-- http://rainbow.arch.scriptmania.com -->
+*/
 
-<!-- Begin
-var nDots = 7;
-if (document.all&&window.print)
-document.body.style.cssText="overflow-x:hidden;overflow-y:scroll"
-var Xpos = 0;
-var Ypos = 0;
+function ElasticBalls(){
+	
+	this.start = function(){
+		
+	};
+	
+	this.stop = function(){
+		
+	};
+	
+	this.isActive = function(){
+		
+	};
+	
+}
 
 
-var DELTAT = .01;
-var SEGLEN = 10;
-var SPRINGK = 10;
-var MASS = 1;
-var GRAVITY = 50;
-var RESISTANCE = 10;
-var STOPVEL = 0.1;
-var STOPACC = 0.1;
-var DOTSIZE = 35;
-var BOUNCE = 0.75;
 
-var isNetscape = navigator.appName=="Netscape";
-
-var followmouse = true;
-
-var dots = new Array();
-init();
 function init()
 {
-    var i = 0;
-    for (i = 0; i < nDots; i++) {
-        dots[i] = new dot(i);
-    }
-    
-     for (i = 0; i < nDots; i++) {
-        dots[i].obj.left = dots[i].X + "px";
-        dots[i].obj.top = dots[i].Y + "px";
-    }
-    
-    if (isNetscape) {
-        startanimate();
-    } else {
-        setTimeout("startanimate()", 20);
-    }
+	var i = 0;
+	for (i = 0; i < nDots; i++) {
+		dots[i] = new dot(i);
+	}
+	
+	for (i = 0; i < nDots; i++) {
+		dots[i].obj.left = dots[i].X + "px";
+		dots[i].obj.top = dots[i].Y + "px";
+	}
+	
+	setTimeout(startanimate, 20);
 }
 
-function dot(i) 
-{
-    this.X = Xpos;
-    this.Y = Ypos;
-    this.dx = 0;
-    this.dy = 0;
-    this.obj = eval("document.getElementById('dot" + i + "').style");
+function dot() {
+	this.elem = document.createElement('div');
+	this.obj = this.elem.style;
+	
+	this.elem.style = [
+			'background-color:blue',
+			'width:0.5em',
+			'height:0.5em',
+			'border-radius:0.25em',
+			'position:absolute'
+		].join(';');
+	
+	this.X = Xpos;
+	this.Y = Ypos;
+	this.dx = 0;
+	this.dy = 0;
+	
+	document.body.append(this.elem);
 }
 
-document.onmousemove = MoveHandler;
-
-function startanimate() {	
-    setInterval("animate()", 20);
+function startanimate() {
+	setInterval(animate, 20);
 }
 
 function MoveHandler(e) {
@@ -86,8 +75,8 @@ function MoveHandler(e) {
 
 function vec(X, Y)
 {
-    this.X = X;
-    this.Y = Y;
+	this.X = X;
+	this.Y = Y;
 }
 
 function springForce(i, j, spring)
@@ -102,16 +91,16 @@ function springForce(i, j, spring)
     }
 }
 
-function animate() {	
-     var start = 0;
-    if (followmouse) {
-        dots[0].X = Xpos;
-        dots[0].Y = Ypos;
-        start = 1;
-    }
-    
-    for (i = start ; i < nDots; i++ ) {
-        
+function animate() {
+    for (let i = 0 ; i < nDots; i++ ) {
+		
+		if (followmouse && !i) {
+			dots[0].X = Xpos;
+			dots[0].Y = Ypos;
+			dots[0].obj.display = 'none';
+			continue;
+		}
+		
         var spring = new vec(0, 0);
         if (i > 0) {
             springForce(i-1, i, spring);
@@ -144,7 +133,7 @@ function animate() {
         if (isNetscape) {
             height = window.innerHeight + document.scrollTop;
             width = window.innerWidth + document.scrollLeft;
-        } else {	
+        } else {
             height = document.body.clientHeight + document.body.scrollTop;
             width = document.body.clientWidth + document.body.scrollLeft;
         }
@@ -172,7 +161,33 @@ function animate() {
         dots[i].obj.top =  dots[i].Y + "px";
     }
 }
-// End -->
-</SCRIPT>
+
+if (document.all && window.print){
+	document.body.style="overflow-x:hidden;overflow-y:scroll";
+}
+var nDots = 7;
+var Xpos = 0;
+var Ypos = 0;
 
 
+var DELTAT = .01;
+var SEGLEN = 10;
+var SPRINGK = 10;
+var MASS = 1;
+var GRAVITY = 50;
+var RESISTANCE = 10;
+var STOPVEL = 0.1;
+var STOPACC = 0.1;
+var DOTSIZE = 35;
+var BOUNCE = 0.75;
+
+var isNetscape = true;
+
+var followmouse = true;
+
+var dots = new Array();
+
+window.addEventListener('load',function(){
+	init();
+	document.onmousemove = MoveHandler;
+});

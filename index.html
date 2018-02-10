@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <title>Vintage Games</title>
+ 
+ <script src='elasticballs.js'></script>
+ <script src='index.js'></script>
+
+ <script type="text/javascript">
+	window.addEventListener('load',function(){
+		let balls = new ElasticBalls();
+		document.querySelector('input').addEventListener('change',function(e){
+			if(balls.isActive()){
+				balls.stop();
+			}
+			else{
+				balls.start();
+			}
+		});
+	});
+ </script>
+</head>
+<body>
+<input type='checkbox' name='elastic' value='true' /><label>ElasticBalls</label>
+</body>
+</html>
