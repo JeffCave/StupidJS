@@ -29,6 +29,7 @@ function ElasticBalls(){
 		if(pin !== null) return;
 		
 		document.addEventListener('mousemove',updatePinPosition);
+		this.isActive = function(){return true;};
 	};
 	
 	
@@ -43,6 +44,20 @@ function ElasticBalls(){
 		document.removeEventListener('mousemove',updatePinPosition);
 		document.removeEventListener('mouseout', destroyPin);
 		destroyPin();
+		this.isActive = function(){return false;};
+	};
+	
+	this.activate = function(state){
+		state = (state !== false);
+		if(state === this.isActive()){
+			return;
+		}
+		if(state){
+			this.start();
+		}
+		else{
+			this.stop();
+		}
 	};
 	
 	this.toggle = function(){

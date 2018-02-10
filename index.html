@@ -7,20 +7,23 @@
  <script src='index.js'></script>
 
  <script type="text/javascript">
+	
+	function ClickAnimation(e){
+		if(!e.target.action){
+			e.target.action = new window[e.target.name]();
+		}
+		e.target.action.activate(e.target.checked);
+		e.target.checked = e.target.action.isActive();
+	}
+	
 	window.addEventListener('load',function(){
-		let balls = new ElasticBalls();
-		document.querySelector('input').addEventListener('change',function(e){
-			if(balls.isActive()){
-				balls.stop();
-			}
-			else{
-				balls.start();
-			}
+		Array.from(document.querySelectorAll('input')).forEach(function(input){
+			input.addEventListener('change',ClickAnimation);
 		});
 	});
  </script>
 </head>
 <body>
-<input type='checkbox' name='elastic' value='true' /><label>ElasticBalls</label>
+<input type='checkbox' name='ElasticBalls' value='true' /><label>ElasticBalls</label>
 </body>
 </html>
