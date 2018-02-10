@@ -11,25 +11,6 @@ global Image,
 */
 
 function SnowFall(){
- 
-	//Pre-loads your image/s below
-	//Configure below - change URL path to the snow image
-	
-	let grphcs=new Array(5)
-	let Image0=new Image();
-	Image0.src=grphcs[0]="snow1.gif";
-	let Image1=new Image();
-	Image1.src=grphcs[1]="snow2.gif";
-	let Image2=new Image();
-	Image2.src=grphcs[2]="snow3.gif";
-	let Image3=new Image();
-	Image3.src=grphcs[3]="snow4.gif";
-	let Image4=new Image();
-	Image4.src=grphcs[4]="snow5.gif";
-	
-	//Smoothness depends on image file size, 
-	//the smaller the size the more you can use!
-	
 	// Configure below - change number of snow to render
 	let Amount=15; 
 	
@@ -40,12 +21,14 @@ function SnowFall(){
 	let Cstep=new Array();
 	
 	for (let i = 0; i < Amount; i++){
-		let P=Math.floor(Math.random()*grphcs.length);
-		let rndPic=grphcs[P];
-		let img = document.createElement('img');
+		let img = document.createElement('div');
 		img.id = "si"+i;
-		img.src = rndPic;
-		img.style = "position:absolute;top:0px;left:0px";
+		img.style = "position:absolute;top:0px;left:0px;background-color:white;";
+		let size = (Math.random()*0.5+0.25).toFixed(2);
+		img.style.height = size + 'em';
+		img.style.width = size + 'em';
+		img.style.borderRadius = (size/2)+'em';
+		img.style.opacity = Math.random()*0.75+0.25;
 		document.body.append(img);
 	}
 
