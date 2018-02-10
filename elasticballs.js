@@ -12,7 +12,7 @@ function ElasticBalls(){
 	let Ypos = 0;
 	
 	
-	let DELTAT = .01;
+	let DELTAT = 0.01;
 	let SEGLEN = 10;
 	let SPRINGK = 10;
 	let MASS = 1;
@@ -20,11 +20,8 @@ function ElasticBalls(){
 	let RESISTANCE = 10;
 	let STOPVEL = 0.1;
 	let STOPACC = 0.1;
-	let DOTSIZE = 35;
 	let BOUNCE = 0.75;
-	
-	let followmouse = true;
-	
+
 	let dots = new Array();
 	
 	let timer = null;
@@ -79,9 +76,19 @@ function ElasticBalls(){
 			dots[i].obj.top = dots[i].Y + "px";
 		}
 		
+		let firstDot = dots[0];
+		firstDot.obj.display = 'none';
 		document.addEventListener('mousemove', function(e){
-			Xpos = e.pageX;
-			Ypos = e.pageY;
+			firstDot.nailedX = e.pageX;
+			firstDot.nailedY = e.pageY;
+		});
+		document.addEventListener('mouseover', function(e){
+			firstDot.nailedX = e.pageX;
+			firstDot.nailedY = e.pageY;
+		});
+		document.addEventListener('mouseout', function(e){
+			firstDot.nailedX = null;
+			firstDot.nailedY = null;
 		});
 	}
 	
@@ -154,13 +161,20 @@ function ElasticBalls(){
 			return;
 		}
 		
-		if (followmouse && !i) {
-			dot.X = Xpos;
-			dot.Y = Ypos;
-			dot.obj.display = 'none';
-			return;
+		
+		// Check to see if the ball is "nailed" to something
+		// if so, it does not ahve any motion dictated by springs and gravity
+		if(dot.nailedX){
+			dot.X = dot.nailedX;
+			dot.dx = 0;
+		}
+		if(dot.nailedY){
+			dot.Y = dot.nailedY;
+			dot.dy = 0;
 		}
 		
+		
+		// Now we can start applying things like spring tensions
 		var spring = new vec(0, 0);
 		if (i > 0) {
 			springForce(i-1, i, spring);
