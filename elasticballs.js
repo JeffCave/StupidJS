@@ -9,6 +9,7 @@ function ElasticBalls(){
 	
 	let nDots = 7;
 	
+	let DELAY = 20;
 	let DELTAT = 0.01;
 	let SEGLEN = 10;
 	let SPRINGK = 10;
@@ -20,14 +21,22 @@ function ElasticBalls(){
 	let BOUNCE = 0.75;
 
 	let dots = [];
-	
 	let timer = null;
+	
 	
 	this.start = function(){
 		if(timer !== null) return;
+		
 		init();
-		timer = setInterval(animate, 20);
+		
+		let animate = function() {
+			dots.forEach(function(d){
+				d.animate();
+			});
+		};
+		timer = setInterval(animate, DELAY);
 	};
+	
 	
 	/**
 	 * Stop the animation associated with the visualization
@@ -35,7 +44,6 @@ function ElasticBalls(){
 	 * The user has indicated they would like the visualization to stop. 
 	 * Since this is an animation that follows the mouse, we have no 
 	 * idea where it is going to stop. Removes it from the screen.
-	 * 
 	 */
 	this.stop = function(){
 		if(timer === null) return;
@@ -61,6 +69,7 @@ function ElasticBalls(){
 	this.isActive = function(){
 		return timer !== null;
 	};
+	
 	
 	function init()
 	{
@@ -233,21 +242,4 @@ function ElasticBalls(){
 			dot.elem.style.top =  dot.y + "px";
 		};
 	}
-	
-	/**
-	 * Animates the specified dot
-	 */
-	function animate(dot) {
-		// originally animate did not take a parameter
-		// if no parameter was passed, assume the global array of dots
-		if(!dot){
-			animate(dots);
-			return;
-		}
-		dot.forEach(function(d){
-			d.animate();
-		});
-		return;
-	}
-
 }
