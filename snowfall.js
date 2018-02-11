@@ -6,45 +6,16 @@ Visit http://rainbow.arch.scriptmania.com/scripts/
   for this script and many more
 */
 
-/*
-global Image,
-*/
-
-function SnowFall(){
-	// Configure below - change number of snow to render
-	let Amount=15; 
-	
-	let Ypos=new Array();
-	let Xpos=new Array();
-	let Speed=new Array();
-	let Step=new Array();
-	let Cstep=new Array();
-	
-	for (let i = 0; i < Amount; i++){
-		let img = document.createElement('div');
-		img.id = "si"+i;
-		img.style = "position:absolute;top:0px;left:0px;background-color:white;";
-		let size = (Math.random()*0.5+0.25).toFixed(2);
-		img.style.height = size + 'em';
-		img.style.width = size + 'em';
-		img.style.borderRadius = (size/2)+'em';
-		img.style.opacity = Math.random()*0.75+0.25;
-		document.body.append(img);
-	}
-
-	let WinHeight=window.innerHeight;
-	let WinWidth=window.innerWidth;
-	for (let i=0; i < Amount; i++){
-		Ypos[i] = Math.round(Math.random()*WinHeight);
-		Xpos[i] = Math.round(Math.random()*WinWidth);
-		Speed[i]= Math.random()*5+3;
-		Cstep[i]=0;
-		Step[i]=Math.random()*0.1+0.05;
-	}
+function SnowFall(amount = 15){
+	let WinHeight = window.innerHeight;
+	let WinWidth = window.innerWidth;
+	let snowflakes = [];
 	
 	let interval = null;
+	
 	this.start = function(){
 		if(interval) return;
+		Initialize();
 		interval = setInterval(fall,115);
 	};
 	this.stop = function(){
@@ -70,26 +41,67 @@ function SnowFall(){
 	};
 	
 	
-	function fall(){
-		var WinHeight=window.innerHeight;
-		var WinWidth=window.innerWidth;
-		for (let i=0; i < Amount; i++){
-			let sy = Speed[i]*Math.sin(90*Math.PI/180);
-			let sx = Speed[i]*Math.cos(Cstep[i]);
-			Ypos[i]+=sy;
-			Xpos[i]+=sx;
-			if (Ypos[i] > WinHeight){
-				Ypos[i]=-60;
-				Xpos[i]=Math.round(Math.random()*WinWidth);
-				Speed[i]=Math.random()*5+3;
-			}
-			let snowflake = document.querySelector("#si"+i);
-			snowflake.style.left=Math.min(WinWidth,Xpos[i]) + "px";
-			snowflake.style.top=Ypos[i] + "px";
-			Cstep[i]+=Step[i];
+	function Initialize(){
+		
+		window.addEventListener('resize',function(e){
+			WinHeight = window.innerHeight;
+			WinWidth = window.innerWidth;
+		});
+		
+		for (let i = 0; i < amount; i++){
+			let flake = new SnowFlake();
+			snowflakes.push(flake);
 		}
 	}
 	
+	function SnowFlake(){
+		this.destroy = function(){
+			this.elem.style.opacity = 0;
+			setTimeout(function(elem){
+				elem.remove();
+			},1000,this.elem);
+		};
+			
+		this.resetFlake = function(){
+			this.Ypos=-60;
+			this.Xpos=Math.round(Math.random()*WinWidth);
+			this.Speed = Math.random()*5+3;
+			this.Cstep = 0;
+			this.Step = Math.random()*0.1+0.05;
+		};
 	
-
+		this.elem = document.createElement('div');
+		this.elem.classList.add('snowflake');
+		this.elem.style = "position:absolute;top:0px;left:0px;background-color:white;";
+		
+		let size = (Math.random()*0.5+0.25).toFixed(2);
+		this.elem.style.height = size + 'em';
+		this.elem.style.width = size + 'em';
+		this.elem.style.borderRadius = (size/2)+'em';
+		this.elem.style.opacity = Math.random()*0.75+0.25;
+		this.elem.style.transition = 'opacity 1s';
+		
+		this.resetFlake();
+		this.elem.Ypos = Math.round(Math.random()*WinHeight);
+		
+		document.body.append(this.elem);
+		
+	}
+	
+	function fall(){
+		snowflakes.forEach(function(flake){
+			let sy = flake.Speed*Math.sin(90*Math.PI/180);
+			let sx = flake.Speed*Math.cos(flake.Cstep);
+			flake.Ypos+=sy;
+			flake.Xpos+=sx;
+			if (flake.Ypos > WinHeight){
+				flake.resetFlake();
+			}
+			flake.elem.style.left = Math.min(WinWidth, flake.Xpos) + "px";
+			flake.elem.style.top = flake.Ypos + "px";
+			flake.Cstep += flake.Step;
+		});
+	}
+	
+	
 }
