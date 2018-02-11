@@ -11,18 +11,13 @@ function SnowFall(amount = 15){
 	let WinWidth = window.innerWidth;
 	let snowflakes = [];
 	
-	let interval = null;
-	
 	this.start = function(){
-		if(interval) return;
 		Initialize();
-		interval = setInterval(fall,115);
 	};
 	this.stop = function(){
-		if(interval){
-			clearInterval(interval);
+		while(snowflakes.length > 0){
+			snowflakes.pop();
 		}
-		interval = null;
 	};
 	this.activate = function(state){
 		state = (state !== false);
@@ -37,7 +32,7 @@ function SnowFall(amount = 15){
 		}
 	};
 	this.isActive = function(){
-		return interval !== null;
+		return snowflakes.length > 0;
 	};
 	
 	
@@ -48,15 +43,22 @@ function SnowFall(amount = 15){
 			WinWidth = window.innerWidth;
 		});
 		
-		for (let i = 0; i < amount; i++){
+		while(snowflakes.length < amount){
 			let flake = new SnowFlake();
 			snowflakes.push(flake);
 		}
+		
 	}
+	
 	
 	function SnowFlake(){
 		this.destroy = function(){
 			this.elem.style.opacity = 0;
+			let i = snowflakes.indexOf(this);
+			snowflakes = snowflakes.splice(i,1);
+			if(interval){
+				clearInterval(interval);
+			}
 			setTimeout(function(elem){
 				elem.remove();
 			},1000,this.elem);
@@ -69,7 +71,30 @@ function SnowFall(amount = 15){
 			this.Cstep = 0;
 			this.Step = Math.random()*0.1+0.05;
 		};
-	
+		
+		this.animate = function(){
+			this.Cstep += this.Step;
+			
+			let sy = this.Speed*Math.sin(90*Math.PI/180);
+			let sx = this.Speed*Math.cos(this.Cstep);
+			this.Ypos+=sy;
+			this.Xpos+=sx;
+			
+			if(this.Ypos > WinHeight){
+				let i = snowflakes.indexOf(this);
+				if (i < 0){
+					this.destroy();
+					return;
+				}
+				else{
+					this.resetFlake();
+				}
+			}
+			
+			this.elem.style.left = Math.min(WinWidth, this.Xpos) + "px";
+			this.elem.style.top = this.Ypos + "px";
+		};
+		
 		this.elem = document.createElement('div');
 		this.elem.classList.add('snowflake');
 		this.elem.style = "position:absolute;top:0px;left:0px;background-color:white;";
@@ -82,26 +107,12 @@ function SnowFall(amount = 15){
 		this.elem.style.transition = 'opacity 1s';
 		
 		this.resetFlake();
-		this.elem.Ypos = Math.round(Math.random()*WinHeight);
+		this.Ypos = Math.round(Math.random()*WinHeight);
 		
 		document.body.append(this.elem);
 		
+		let interval = setInterval(function(flake){flake.animate();},115,this);
+		
 	}
-	
-	function fall(){
-		snowflakes.forEach(function(flake){
-			let sy = flake.Speed*Math.sin(90*Math.PI/180);
-			let sx = flake.Speed*Math.cos(flake.Cstep);
-			flake.Ypos+=sy;
-			flake.Xpos+=sx;
-			if (flake.Ypos > WinHeight){
-				flake.resetFlake();
-			}
-			flake.elem.style.left = Math.min(WinWidth, flake.Xpos) + "px";
-			flake.elem.style.top = flake.Ypos + "px";
-			flake.Cstep += flake.Step;
-		});
-	}
-	
 	
 }
