@@ -23,6 +23,11 @@ function ElasticBalls(){
 	let pin = null;
 	let pinBuster = null;
 	let mousePos = {x:0,y:0};
+	
+	document.addEventListener('mousemove',function(e){
+		mousePos.x = e.pageX;
+		mousePos.y = e.pageY;
+	});
 
 	
 	this.start = function(){
@@ -92,8 +97,6 @@ function ElasticBalls(){
 		pin.velocity.x = 0;
 		pin.velocity.y = 0;
 		
-		mousePos.x = e.pageX;
-		mousePos.y = e.pageY;
 	}
 	
 	function destroyPin(){
@@ -102,7 +105,7 @@ function ElasticBalls(){
 		}
 	}
 	
-	function init()
+	function init(x=0,y=0)
 	{
 		let chain = new Dot();
 		for(let d=1; d<nDots; d++){
@@ -136,8 +139,8 @@ function ElasticBalls(){
 			].join(';');
 		this.elem.classList.add('elasticball');
 		
-		this.x = 0;
-		this.y = 0;
+		this.x = mousePos.x;
+		this.y = mousePos.y;
 		this.velocity = {
 			x:STOPVEL,
 			y:STOPVEL
